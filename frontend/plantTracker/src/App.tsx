@@ -1,11 +1,75 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import axios from "axios"
-import { TextField, Button, Stack, Typography } from "@mui/material"
+import {
+  TextField,
+  Button,
+  Stack,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  TableContainer,
+  Paper,
+  Box,
+} from "@mui/material"
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider"
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar"
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns"
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet"
+import type { LatLngExpression } from "leaflet"
+import "leaflet/dist/leaflet.css"
+
+function dmsToDecimal(dms: string, fallbackHemi: "N" | "S" | "E" | "W") {
+  const m = dms.match(/(\d+)[°\s]+(\d+)[’'\s]+([\d.]+)["”]?\s*([NSEW])?/i)
+  if (!m) return null
+  const deg = Number(m[1])
+  const min = Number(m[2])
+  const sec = Number(m[3])
+  if ([deg, min, sec].some((n) => Number.isNaN(n))) return null
+  let dec = deg + min / 60 + sec / 3600
+  const hemi = ((m[4] as string | undefined) || fallbackHemi).toUpperCase()
+  if (hemi === "S" || hemi === "W") dec *= -1
+  return dec
+}
+
+function parseCoords(raw: unknown): { lat: number; lng: number } | null {
+  if (typeof raw !== "string") return null
+  const s = raw.trim()
+
+  const parts = s.split(/\s+/)
+  if (parts.length < 2) return null
+
+  const latPart = parts[0]
+  const lngPart = parts.slice(1).join(" ")
+
+  const lat = dmsToDecimal(latPart, "N")
+  const lng = dmsToDecimal(lngPart, "W")
+
+  if (lat === null || lng === null) return null
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
+
+  return { lat, lng }
+}
 
 function App() {
   const [collectionID, setCollectionID] = useState("")
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<Record<string, any> | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const selectedDate = useMemo(() => {
+    const raw = data?.["Date Collected"]
+    if (typeof raw !== "string") return null
+    const d = new Date(raw)
+    return isNaN(d.getTime()) ? null : d
+  }, [data])
+
+  const coords = useMemo(() => parseCoords(data?.["Cords"]), [data])
+
+  const mapCenter = useMemo<LatLngExpression | null>(() => {
+    if (!coords) return null
+    return [coords.lat, coords.lng] as LatLngExpression
+  }, [coords])
 
   const handleFetch = async () => {
     const id = collectionID.trim()
@@ -27,7 +91,7 @@ function App() {
   }
 
   return (
-    <Stack spacing={2} sx={{ maxWidth: 520, mx: "auto", mt: 6, px: 2 }}>
+    <Stack spacing={2} sx={{ maxWidth: 1200, mx: "auto", mt: 6, px: 2 }}>
       <Typography variant="h5">PlantTracker</Typography>
 
       <TextField
@@ -41,13 +105,64 @@ function App() {
         }}
       />
 
-
       <Button variant="contained" onClick={handleFetch} disabled={!collectionID.trim()}>
         Fetch Collection
       </Button>
 
       {error && <Typography color="error">{error}</Typography>}
-      {data && <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(data, null, 2)}</pre>}
+
+      {data && (
+        <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
+          <Stack spacing={2} sx={{ width: 380, flexShrink: 0 }}>
+            <Paper sx={{ p: 1 }}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DateCalendar value={selectedDate} readOnly />
+              </LocalizationProvider>
+            </Paper>
+
+            <Paper sx={{ p: 1 }}>
+              <Typography variant="subtitle1" sx={{ px: 1, pb: 1 }}>
+                Map
+              </Typography>
+
+              {mapCenter ? (
+                <Box sx={{ height: 320, width: "100%" }}>
+                  <MapContainer
+                    center={mapCenter}
+                    zoom={12}
+                    style={{ height: "100%", width: "100%" }}
+                    scrollWheelZoom={false}
+                  >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                    <CircleMarker center={mapCenter} radius={8}>
+                      <Popup>
+                        {coords!.lat.toFixed(6)}, {coords!.lng.toFixed(6)}
+                      </Popup>
+                    </CircleMarker>
+                  </MapContainer>
+                </Box>
+              ) : (
+                <Typography sx={{ px: 1, pb: 1 }} color="text.secondary">
+                  No valid coords found in “Cords”.
+                </Typography>
+              )}
+            </Paper>
+          </Stack>
+
+          <TableContainer component={Paper} sx={{ flex: 1 }}>
+            <Table size="small">
+              <TableBody>
+                {Object.entries(data).map(([key, value]) => (
+                  <TableRow key={key}>
+                    <TableCell sx={{ fontWeight: 600, width: 260 }}>{key}</TableCell>
+                    <TableCell>{value === null ? "—" : String(value)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
     </Stack>
   )
 }
