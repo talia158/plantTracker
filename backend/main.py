@@ -1,6 +1,7 @@
 """
 Backend API for plantTracker
 TODO Containerization with Docker
+TODO Extension for the scenario where one collection has more than one species
 """
 
 import uvicorn
