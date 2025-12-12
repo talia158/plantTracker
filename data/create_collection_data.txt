@@ -1,0 +1,20 @@
+CREATE TABLE CollectionData (
+    "Collection Code" TEXT PRIMARY KEY,
+    "Species Code" TEXT,
+    "Common Name" TEXT,
+    "Per Ounce" REAL,
+    "Weight" REAL,
+    "Chaff" REAL,
+    "PLS" REAL,
+    "Date Collected" TEXT,
+    "Cords" TEXT,
+    "Year Collected" INTEGER,
+    "County" TEXT,
+    "Formation" TEXT,
+    "Elevation" TEXT,
+    "Ran Out" TEXT,
+    "Prairie Moon" TEXT,
+    "Storage Code" TEXT,
+    "Notes" TEXT,
+    FOREIGN KEY ("Species Code") REFERENCES SpeciesData("Species Code")
+);

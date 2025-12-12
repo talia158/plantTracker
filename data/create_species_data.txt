@@ -1,0 +1,16 @@
+CREATE TABLE SpeciesData (
+    "Species Code" TEXT PRIMARY KEY,
+    "Taxon Name" TEXT,
+    "Common Name" TEXT,
+    "Seeds/Ounce" INTEGER,
+    "Germination Code" TEXT,
+    "Life Cycle" TEXT,
+    "Sun Exposure" TEXT,
+    "Soil Moisture" TEXT,
+    "Height (feet)" REAL,
+    "Selling" TEXT,
+    "Establish Seed/Restore Plugs" TEXT,
+    "Ecology Value" INTEGER,
+    "Sell Value" INTEGER,
+    "In Stock" TEXT
+);
