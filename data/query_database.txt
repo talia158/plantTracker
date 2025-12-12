@@ -1,0 +1,35 @@
+SELECT 
+    c."Collection Code",
+    c."Species Code",
+    c."Common Name",
+    c."Per Ounce",
+    c."Weight",
+    c."Chaff",
+    c."PLS",
+    c."Date Collected",
+    c."Cords",
+    c."Year Collected",
+    c."County",
+    c."Formation",
+    c."Elevation",
+    c."Ran Out",
+    c."Prairie Moon",
+    c."Storage Code",
+    c."Notes",
+    s."Taxon Name",
+    s."Common Name" AS SpeciesCommonName,
+    s."Seeds/Ounce",
+    s."Germination Code",
+    s."Life Cycle",
+    s."Sun Exposure",
+    s."Soil Moisture",
+    s."Height (feet)",
+    s."Selling",
+    s."Establish Seed/Restore Plugs",
+    s."Ecology Value",
+    s."Sell Value",
+    s."In Stock"
+FROM CollectionData c
+LEFT JOIN SpeciesData s
+    ON c."Species Code" = s."Species Code"
+WHERE c."Collection Code" = ?;

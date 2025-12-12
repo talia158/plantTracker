@@ -23,6 +23,7 @@ app.add_middleware(
 class TestRequest(BaseModel):
     test_field: str
 
+
 def load_and_clean_collection_csv(path: str) -> pd.DataFrame:
     df = pd.read_csv(
         path,
@@ -92,6 +93,7 @@ def load_and_clean_collection_csv(path: str) -> pd.DataFrame:
 
     return df
 
+
 def initialize_sqlite_db():
     os.makedirs("data", exist_ok=True)
 
@@ -122,6 +124,26 @@ def initialize_sqlite_db():
 
     con.close()
 
+
+def get_collection_with_species(collection_code: str):
+    con = sqlite3.connect("data/database.db")
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    with open('data/query_database.txt', 'r') as file:
+        query = file.read()
+
+    cur.execute(query, (collection_code,))
+    row = cur.fetchone()
+
+    con.close()
+
+    if row is None:
+        return None
+
+    return dict(row)
+
+
 @app.get("/api/collection/{collectionID}")
 def handle_expansion(collectionID: int):
     return {
@@ -136,6 +158,8 @@ def run(request: TestRequest):
 
 if not os.path.exists("data/database.db"):
     initialize_sqlite_db()
+
+print(get_collection_with_species("C0001"))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
