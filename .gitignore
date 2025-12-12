@@ -1,2 +1,44 @@
+# Data
 data/cultivationinfo.csv
 data/seedcollection.csv
+
+# Python / Backend
+.venv/
+__pycache__/
+*.py[cod]
+*.log
+
+# SQLite / data
+backend/data/*.db
+data/*.db
+*.sqlite
+*.sqlite3
+
+# Frontend (Vite + React)
+frontend/plantTracker/node_modules/
+frontend/plantTracker/dist/
+frontend/plantTracker/.vite/
+
+# Build artifacts
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
