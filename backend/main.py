@@ -5,9 +5,11 @@ TODO Extension for the scenario where one collection has more than one species
 """
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+import shutil
 
 import sqlite3
 import pandas as pd
@@ -15,6 +17,7 @@ import os
 
 SPECIES_CSV = 'data/cultivationinfo.csv'
 COLLECTION_CSV = 'data/seedcollection.csv'
+db_path = "data/database.db"
 
 app = FastAPI()
 app.add_middleware(
@@ -158,11 +161,45 @@ def get_collection_info(collectionID: str):
     return res
 
 
-@app.post("/api/collection/test")
-def run(request: TestRequest):
-    return {"message": f"{request.test_field} works"}
+@app.post("/api/upload")
+async def upload_csvs(
+    species_csv: UploadFile = File(...),
+    collection_csv: UploadFile = File(...),
+):
+    os.makedirs("data", exist_ok=True)
 
-if not os.path.exists("data/database.db"):
+    if not species_csv.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="species_csv must be a .csv file")
+    if not collection_csv.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="collection_csv must be a .csv file")
+
+    tmp_species = SPECIES_CSV + ".tmp"
+    tmp_collection = COLLECTION_CSV + ".tmp"
+
+    try:
+        with open(tmp_species, "wb") as f:
+            shutil.copyfileobj(species_csv.file, f)
+        with open(tmp_collection, "wb") as f:
+            shutil.copyfileobj(collection_csv.file, f)
+
+        os.replace(tmp_species, SPECIES_CSV)
+        os.replace(tmp_collection, COLLECTION_CSV)
+    finally:
+        species_csv.file.close()
+        collection_csv.file.close()
+
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    initialize_sqlite_db()
+
+    return {
+        "message": "Files saved",
+        "species_path": SPECIES_CSV,
+        "collection_path": COLLECTION_CSV,
+    }
+
+
+if not os.path.exists(db_path):
     initialize_sqlite_db()
 
 if __name__ == "__main__":

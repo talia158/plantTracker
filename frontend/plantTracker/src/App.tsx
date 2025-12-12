@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import axios from "axios"
 import {
   TextField,
@@ -57,6 +57,14 @@ function App() {
   const [data, setData] = useState<Record<string, any> | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const [speciesFile, setSpeciesFile] = useState<File | null>(null)
+  const [collectionFile, setCollectionFile] = useState<File | null>(null)
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const speciesInputRef = useRef<HTMLInputElement | null>(null)
+  const collectionInputRef = useRef<HTMLInputElement | null>(null)
+
   const selectedDate = useMemo(() => {
     const raw = data?.["Date Collected"]
     if (typeof raw !== "string") return null
@@ -90,9 +98,107 @@ function App() {
     }
   }
 
+  const pickSpeciesCsv = () => {
+    setError(null)
+    setUploadStatus(null)
+    if (speciesInputRef.current) speciesInputRef.current.value = ""
+    speciesInputRef.current?.click()
+  }
+
+  const pickCollectionCsv = () => {
+    setError(null)
+    setUploadStatus(null)
+    if (collectionInputRef.current) collectionInputRef.current.value = ""
+    collectionInputRef.current?.click()
+  }
+
+  const onSpeciesPicked = (file: File | null) => {
+    if (!file) return
+    setSpeciesFile(file)
+  }
+
+  const onCollectionPicked = (file: File | null) => {
+    if (!file) return
+    setCollectionFile(file)
+  }
+
+  const uploadBoth = async () => {
+    if (!speciesFile || !collectionFile) return
+
+    setUploading(true)
+    setUploadStatus("Uploading...")
+    setError(null)
+
+    try {
+      const form = new FormData()
+      form.append("species_csv", speciesFile)
+      form.append("collection_csv", collectionFile)
+
+      await axios.post("http://localhost:8000/api/upload", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+
+      setUploadStatus("Upload complete.")
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || `upload failed with status ${err.response?.status}`)
+      } else {
+        setError("unknown upload error")
+      }
+      setUploadStatus(null)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <Stack spacing={2} sx={{ maxWidth: 1200, mx: "auto", mt: 6, px: 2 }}>
       <Typography variant="h5">PlantTracker</Typography>
+
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <Button variant="outlined" onClick={pickSpeciesCsv} disabled={uploading}>
+          Upload Species CSV
+        </Button>
+
+        <Button variant="outlined" onClick={pickCollectionCsv} disabled={uploading}>
+          Upload Collection CSV
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={uploadBoth}
+          disabled={uploading || !speciesFile || !collectionFile}
+        >
+          Update Database
+        </Button>
+
+        <Typography variant="body2" sx={{ color: "gray" }}>
+          Species: {speciesFile ? speciesFile.name : "—"} | Collection:{" "}
+          {collectionFile ? collectionFile.name : "—"}
+        </Typography>
+
+        {uploadStatus && (
+          <Typography variant="body2" sx={{ color: "gray" }}>
+            {uploadStatus}
+          </Typography>
+        )}
+      </Stack>
+
+      <input
+        ref={speciesInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        style={{ display: "none" }}
+        onChange={(e) => onSpeciesPicked(e.target.files?.[0] ?? null)}
+      />
+
+      <input
+        ref={collectionInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        style={{ display: "none" }}
+        onChange={(e) => onCollectionPicked(e.target.files?.[0] ?? null)}
+      />
 
       <TextField
         label="Collection ID"
@@ -101,7 +207,7 @@ function App() {
         fullWidth
         sx={{
           input: { color: "white" },
-          label: { color: "white" },
+          label: { color: "gray" },
         }}
       />
 
