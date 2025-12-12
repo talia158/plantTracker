@@ -1,61 +1,54 @@
-import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react"
 import axios from "axios"
+import { TextField, Button, Stack, Typography } from "@mui/material"
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [collectionID, setCollectionID] = useState("")
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const collectionID = "C0001"
+  const handleFetch = async () => {
+    const id = collectionID.trim()
+    if (!id) return
 
-    axios
-      .get(`http://localhost:8000/api/collection/${collectionID}`)
-      .then((res) => {
-        setData(res.data)
-      })
-      .catch((err) => {
-        if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.detail || `request failed with status ${err.response?.status}`)
-        } else {
-          setError("unknown error")
-        }
-      })
-  }, [])
+    setError(null)
+    setData(null)
+
+    try {
+      const res = await axios.get(`http://localhost:8000/api/collection/${id}`)
+      setData(res.data)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || `request failed with status ${err.response?.status}`)
+      } else {
+        setError("unknown error")
+      }
+    }
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
+    <Stack spacing={2} sx={{ maxWidth: 520, mx: "auto", mt: 6, px: 2 }}>
+      <Typography variant="h5">PlantTracker</Typography>
 
-      <h1>Vite + React</h1>
+      <TextField
+        label="Collection ID"
+        value={collectionID}
+        onChange={(e) => setCollectionID(e.target.value)}
+        fullWidth
+        sx={{
+          input: { color: "white" },
+          label: { color: "white" },
+        }}
+      />
 
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
+      <Button variant="contained" onClick={handleFetch} disabled={!collectionID.trim()}>
+        Fetch Collection
+      </Button>
 
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      {error && <Typography color="error">{error}</Typography>}
+      {data && <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(data, null, 2)}</pre>}
+    </Stack>
   )
 }
 
