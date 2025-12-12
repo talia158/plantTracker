@@ -87,7 +87,7 @@ function App() {
     setData(null)
 
     try {
-      const res = await axios.get(`http://localhost:8000/api/collection/${id}`)
+      const res = await axios.get(`/api/collection/${id}`)
       setData(res.data)
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -134,7 +134,7 @@ function App() {
       form.append("species_csv", speciesFile)
       form.append("collection_csv", collectionFile)
 
-      await axios.post("http://localhost:8000/api/upload", form, {
+      axios.post("/api/upload", form, {
         headers: { "Content-Type": "multipart/form-data" },
       })
 
