@@ -1,5 +1,10 @@
+"""
+Backend API for plantTracker
+TODO Containerization with Docker
+"""
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -145,11 +150,11 @@ def get_collection_with_species(collection_code: str):
 
 
 @app.get("/api/collection/{collectionID}")
-def handle_expansion(collectionID: int):
-    return {
-        "works": "yes",
-        "collection": str(collectionID)
-    }
+def get_collection_info(collectionID: str):
+    res = get_collection_with_species(collectionID)
+    if res is None:
+        raise HTTPException(status_code=404, detail="Collection not found")
+    return res
 
 
 @app.post("/api/collection/test")
@@ -158,8 +163,6 @@ def run(request: TestRequest):
 
 if not os.path.exists("data/database.db"):
     initialize_sqlite_db()
-
-print(get_collection_with_species("C0001"))
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
