@@ -1,6 +1,5 @@
 """
 Backend API for plantTracker
-TODO Containerization with Docker
 TODO Extension for the scenario where one collection has more than one species
 """
 
@@ -14,6 +13,8 @@ import shutil
 import sqlite3
 import pandas as pd
 import os
+import re
+from typing import Any, Dict, Optional
 
 SPECIES_CSV = 'data/cultivationinfo.csv'
 COLLECTION_CSV = 'data/seedcollection.csv'
@@ -103,6 +104,49 @@ def load_and_clean_collection_csv(path: str) -> pd.DataFrame:
     return df
 
 
+def dms_to_decimal(dms: str, fallback_hemi: str) -> Optional[float]:
+    m = re.match(r"(\d+)[°\s]+(\d+)[’'\s]+([\d.]+)[\"”]?\s*([NSEW])?", dms.strip(), re.IGNORECASE)
+    if not m:
+        return None
+
+    try:
+        deg = float(m.group(1))
+        minutes = float(m.group(2))
+        seconds = float(m.group(3))
+    except (TypeError, ValueError):
+        return None
+
+    dec = deg + minutes / 60 + seconds / 3600
+    hemi = (m.group(4) or fallback_hemi).upper()
+    if hemi in ("S", "W"):
+        dec *= -1
+    return dec
+
+
+def parse_coords(raw: Any) -> Optional[Dict[str, float]]:
+    if not isinstance(raw, str):
+        return None
+
+    s = raw.strip()
+    parts = s.split()
+    if len(parts) < 2:
+        return None
+
+    lat_part = parts[0]
+    lng_part = " ".join(parts[1:])
+
+    lat = dms_to_decimal(lat_part, "N")
+    lng = dms_to_decimal(lng_part, "W")
+
+    if lat is None or lng is None:
+        return None
+
+    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        return None
+
+    return {"lat": lat, "lng": lng}
+
+
 def initialize_sqlite_db():
     os.makedirs("data", exist_ok=True)
 
@@ -158,6 +202,11 @@ def get_collection_info(collectionID: str):
     res = get_collection_with_species(collectionID)
     if res is None:
         raise HTTPException(status_code=404, detail="Collection not found")
+
+    coords = parse_coords(res.get("Cords"))
+    res["Latitude"] = coords["lat"] if coords else None
+    res["Longitude"] = coords["lng"] if coords else None
+
     return res
 
 

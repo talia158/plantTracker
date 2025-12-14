@@ -20,38 +20,6 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet"
 import type { LatLngExpression } from "leaflet"
 import "leaflet/dist/leaflet.css"
 
-function dmsToDecimal(dms: string, fallbackHemi: "N" | "S" | "E" | "W") {
-  const m = dms.match(/(\d+)[°\s]+(\d+)[’'\s]+([\d.]+)["”]?\s*([NSEW])?/i)
-  if (!m) return null
-  const deg = Number(m[1])
-  const min = Number(m[2])
-  const sec = Number(m[3])
-  if ([deg, min, sec].some((n) => Number.isNaN(n))) return null
-  let dec = deg + min / 60 + sec / 3600
-  const hemi = ((m[4] as string | undefined) || fallbackHemi).toUpperCase()
-  if (hemi === "S" || hemi === "W") dec *= -1
-  return dec
-}
-
-function parseCoords(raw: unknown): { lat: number; lng: number } | null {
-  if (typeof raw !== "string") return null
-  const s = raw.trim()
-
-  const parts = s.split(/\s+/)
-  if (parts.length < 2) return null
-
-  const latPart = parts[0]
-  const lngPart = parts.slice(1).join(" ")
-
-  const lat = dmsToDecimal(latPart, "N")
-  const lng = dmsToDecimal(lngPart, "W")
-
-  if (lat === null || lng === null) return null
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
-
-  return { lat, lng }
-}
-
 function App() {
   const [collectionID, setCollectionID] = useState("")
   const [data, setData] = useState<Record<string, any> | null>(null)
@@ -72,7 +40,15 @@ function App() {
     return isNaN(d.getTime()) ? null : d
   }, [data])
 
-  const coords = useMemo(() => parseCoords(data?.["Cords"]), [data])
+  const coords = useMemo(() => {
+    if (!data) return null
+    const rawLat = data["Latitude"]
+    const rawLng = data["Longitude"]
+    const lat = typeof rawLat === "number" ? rawLat : Number(rawLat)
+    const lng = typeof rawLng === "number" ? rawLng : Number(rawLng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+    return { lat, lng }
+  }, [data])
 
   const mapCenter = useMemo<LatLngExpression | null>(() => {
     if (!coords) return null
