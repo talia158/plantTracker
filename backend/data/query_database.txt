@@ -8,6 +8,8 @@ SELECT
     c."PLS",
     c."Date Collected",
     c."Cords",
+    c."Latitude",
+    c."Longitude",
     c."Year Collected",
     c."County",
     c."Formation",

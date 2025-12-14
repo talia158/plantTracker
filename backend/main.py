@@ -101,6 +101,34 @@ def load_and_clean_collection_csv(path: str) -> pd.DataFrame:
     for col in df.select_dtypes(include="object").columns:
         df[col] = df[col].str.strip()
 
+    coords = df["Cords"].apply(parse_coords)
+    df["Latitude"] = coords.apply(lambda c: c["lat"] if c else None)
+    df["Longitude"] = coords.apply(lambda c: c["lng"] if c else None)
+
+    df = df[
+        [
+            "Collection Code",
+            "Species Code",
+            "Common Name",
+            "Per Ounce",
+            "Weight",
+            "Chaff",
+            "PLS",
+            "Date Collected",
+            "Cords",
+            "Latitude",
+            "Longitude",
+            "Year Collected",
+            "County",
+            "Formation",
+            "Elevation",
+            "Ran Out",
+            "Prairie Moon",
+            "Storage Code",
+            "Notes",
+        ]
+    ]
+
     return df
 
 
@@ -203,9 +231,13 @@ def get_collection_info(collectionID: str):
     if res is None:
         raise HTTPException(status_code=404, detail="Collection not found")
 
-    coords = parse_coords(res.get("Cords"))
-    res["Latitude"] = coords["lat"] if coords else None
-    res["Longitude"] = coords["lng"] if coords else None
+    lat = res.get("Latitude")
+    lng = res.get("Longitude")
+
+    if lat is None or lng is None:
+        coords = parse_coords(res.get("Cords"))
+        res["Latitude"] = coords["lat"] if coords else None
+        res["Longitude"] = coords["lng"] if coords else None
 
     return res
 

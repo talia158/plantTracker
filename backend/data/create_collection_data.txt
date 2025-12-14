@@ -8,6 +8,8 @@ CREATE TABLE CollectionData (
     "PLS" REAL,
     "Date Collected" TEXT,
     "Cords" TEXT,
+    "Latitude" REAL,
+    "Longitude" REAL,
     "Year Collected" INTEGER,
     "County" TEXT,
     "Formation" TEXT,
