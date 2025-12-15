@@ -1,0 +1,10 @@
+SELECT
+    "Collection Code" AS collection_code,
+    "Common Name" AS common_name,
+    "Latitude" AS latitude,
+    "Longitude" AS longitude,
+    "County" AS county,
+    "Date Collected" AS date_collected
+FROM CollectionData
+WHERE Latitude BETWEEN ? AND ? AND Longitude BETWEEN ? AND ?
+LIMIT ? OFFSET ?;

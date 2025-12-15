@@ -1,0 +1,3 @@
+SELECT COUNT(*) as total
+FROM CollectionData
+WHERE Latitude BETWEEN ? AND ? AND Longitude BETWEEN ? AND ?;
