@@ -25,6 +25,7 @@ function SearchPage() {
   const [data, setData] = useState<Record<string, any> | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // Derive a safe Date object for the calendar from the API payload
   const selectedDate = useMemo(() => {
     const raw = data?.["Date Collected"]
     if (typeof raw !== "string") return null
@@ -32,6 +33,7 @@ function SearchPage() {
     return isNaN(d.getTime()) ? null : d
   }, [data])
 
+  // Normalize lat/lng values even if they come back as strings
   const coords = useMemo(() => {
     if (!data) return null
     const rawLat = data["Latitude"]
@@ -47,6 +49,7 @@ function SearchPage() {
     return [coords.lat, coords.lng] as LatLngExpression
   }, [coords])
 
+  // Fetch a single collection record and store either the payload or an error
   const handleFetch = async () => {
     const id = collectionID.trim()
     if (!id) return

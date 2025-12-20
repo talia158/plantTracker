@@ -12,6 +12,7 @@ function ConfigurePage() {
   const speciesInputRef = useRef<HTMLInputElement | null>(null)
   const collectionInputRef = useRef<HTMLInputElement | null>(null)
 
+  // Trigger a hidden file input for the species CSV, resetting previous picks
   const pickSpeciesCsv = () => {
     setError(null)
     setUploadStatus(null)
@@ -19,6 +20,7 @@ function ConfigurePage() {
     speciesInputRef.current?.click()
   }
 
+  // Trigger a hidden file input for the collection CSV, resetting previous picks
   const pickCollectionCsv = () => {
     setError(null)
     setUploadStatus(null)
@@ -36,6 +38,7 @@ function ConfigurePage() {
     setCollectionFile(file)
   }
 
+  // Send both CSVs to the backend in one multipart request
   const uploadBoth = async () => {
     if (!speciesFile || !collectionFile) return
 

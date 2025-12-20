@@ -42,6 +42,7 @@ type CollectionListResponse = {
 type CollectionDetail = Record<string, any>
 
 function MapMoveListener({ onMove }: { onMove: (b: Bounds) => void }) {
+  // Watch for map movements and report the visible bounds
   const map = useMapEvents({
     moveend() {
       const b = map.getBounds()
@@ -55,6 +56,7 @@ function MapMoveListener({ onMove }: { onMove: (b: Bounds) => void }) {
   })
 
   useEffect(() => {
+    // Emit initial bounds on mount so the first fetch can run
     const b = map.getBounds()
     onMove({
       minLat: b.getSouth(),
@@ -85,6 +87,7 @@ function MapSearchPage() {
 
   useEffect(() => {
     if (!bounds) return
+    // Fetch collections within the current map bounds
     const fetchCollections = async () => {
       setLoading(true)
       setError(null)
@@ -119,11 +122,13 @@ function MapSearchPage() {
   const totalPages = Math.max(1, Math.ceil(total / limit))
   const currentPage = Math.floor(offset / limit) + 1
 
+  // Reset pagination when the user pans/zooms the map
   const onBoundsChange = useCallback((b: Bounds) => {
     setBounds(b)
     setOffset(0)
   }, [])
 
+  // Load full details for a collection when requested from a popup
   const loadDetails = async (id: string) => {
     setSelectedId(id)
     setDetail(null)
