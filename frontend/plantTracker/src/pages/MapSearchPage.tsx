@@ -4,6 +4,10 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
+  List,
+  ListItemButton,
+  ListItemText,
   Paper,
   Stack,
   Table,
@@ -84,6 +88,13 @@ function MapSearchPage() {
   const [detailError, setDetailError] = useState<string | null>(null)
 
   const center = useMemo<LatLngExpression>(() => [39.5, -98.35], [])
+  const sortedMarkers = useMemo(() => {
+    return [...markers].sort((a, b) => {
+      const aLabel = a.common_name || a.collection_code
+      const bLabel = b.common_name || b.collection_code
+      return aLabel.localeCompare(bLabel)
+    })
+  }, [markers])
 
   useEffect(() => {
     if (!bounds) return
@@ -152,39 +163,65 @@ function MapSearchPage() {
 
   return (
     <Stack spacing={2}>
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 2, width: "200%" }}>
         <Typography variant="h6" gutterBottom>
           Map Search
         </Typography>
 
-        <Box sx={{ height: 420, borderRadius: 1, overflow: "hidden" }}>
-          <MapContainer
-            center={center}
-            zoom={5}
-            style={{ height: "100%", width: "100%" }}
-            scrollWheelZoom={false}
+        <Box sx={{ display: "flex", gap: 2, alignItems: "stretch", width: "100%" }}>
+          <Box sx={{ height: 420, borderRadius: 1, overflow: "hidden", flex: 1 }}>
+            <MapContainer
+              center={center}
+              zoom={5}
+              style={{ height: "100%", width: "100%" }}
+              scrollWheelZoom={false}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapMoveListener onMove={onBoundsChange} />
+              {markers.map((m) => (
+                <CircleMarker key={m.collection_code} center={[m.latitude, m.longitude]} radius={8}>
+                  <Popup>
+                    <Stack spacing={0.5}>
+                      <Typography variant="subtitle2">{m.collection_code}</Typography>
+                      <Typography variant="body2">
+                        {m.common_name || "Unknown"} | {m.county || "—"}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {m.date_collected || "No date"}
+                      </Typography>
+                      <Button size="small" onClick={() => loadDetails(m.collection_code)}>
+                        View details
+                      </Button>
+                    </Stack>
+                  </Popup>
+                </CircleMarker>
+              ))}
+            </MapContainer>
+          </Box>
+
+          <Paper
+            variant="outlined"
+            sx={{ width: 300, height: 420, overflow: "auto", flexShrink: 0 }}
           >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapMoveListener onMove={onBoundsChange} />
-            {markers.map((m) => (
-              <CircleMarker key={m.collection_code} center={[m.latitude, m.longitude]} radius={8}>
-                <Popup>
-                  <Stack spacing={0.5}>
-                    <Typography variant="subtitle2">{m.collection_code}</Typography>
-                    <Typography variant="body2">
-                      {m.common_name || "Unknown"} | {m.county || "—"}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {m.date_collected || "No date"}
-                    </Typography>
-                    <Button size="small" onClick={() => loadDetails(m.collection_code)}>
-                      View details
-                    </Button>
-                  </Stack>
-                </Popup>
-              </CircleMarker>
-            ))}
-          </MapContainer>
+            <List dense disablePadding>
+              {sortedMarkers.map((m, index) => (
+                <Box key={m.collection_code}>
+                  <ListItemButton
+                    selected={selectedId === m.collection_code}
+                    onClick={() => loadDetails(m.collection_code)}
+                  >
+                    <ListItemText
+                      primary={m.common_name || m.collection_code}
+                      secondary={`${m.collection_code} • ${m.county || "—"} • ${
+                        m.date_collected || "No date"
+                      }`}
+                    />
+                  </ListItemButton>
+                  {index < sortedMarkers.length - 1 && <Divider />}
+                </Box>
+              ))}
+            </List>
+          </Paper>
         </Box>
 
         <Stack direction="row" spacing={2} alignItems="center" sx={{ mt: 2 }}>
@@ -223,7 +260,7 @@ function MapSearchPage() {
         </Stack>
       </Paper>
 
-      <Paper sx={{ p: 2 }}>
+      <Paper sx={{ p: 2, width: "200%" }}>
         <Typography variant="h6" gutterBottom>
           Details
         </Typography>
